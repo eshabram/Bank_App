@@ -94,7 +94,7 @@ public class Bank extends Account{
             Transaction trans = new Transaction(accNum, 2, withdraw);
             temp.addTransaction(trans);
             temp.setBalance(temp.getBalance()-withdraw);
-            return true;  //
+            return true;  // comment
         } else return false;
     }
 
