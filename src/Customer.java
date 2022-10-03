@@ -6,10 +6,10 @@ public class Customer {
 
 
     public Customer() {
-        this.name = "Default";
-        this.address = "0 Nowheresville";
-        this.zip = 00000;
-        this.ssn = "";
+        name = "Default";
+        address = "0 Nowheresville";
+        zip = 00000;
+        ssn = "";
     }
 
     public Customer(String name, String addr, int zip, String ssn) {

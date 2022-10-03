@@ -23,6 +23,7 @@ public class Bank extends Account{
     }
 
     public Bank(String name) {
+        super();
         this.name = name;
     }
 
@@ -46,19 +47,6 @@ public class Bank extends Account{
                 return true;
             }
         } else return false;
-    }
-
-    public boolean newCustomer(String name, String addr, int zip, String ssn) {
-        if (!ssnNumbers.contains(ssn)) {
-            Customer newCustomer = new Customer(name, addr, zip, ssn);
-            customers.add(newCustomer);
-            names.add(name);
-            addressBook.add(addr);
-            ssnNumbers.add(ssn);
-            numCustomers++;
-            return true;
-        }
-        else return false;
     }
 
     public boolean closeAccount(int accNum) {
@@ -167,6 +155,7 @@ public class Bank extends Account{
         // swallow newline character
         inputStream.nextLine();
         for (int i = 0; i < numAccount; i++) {
+            Customer customer;
             String account = inputStream.nextLine();
             String[] accSplit = account.split(",");
             String ssn = accSplit[0];
@@ -178,6 +167,19 @@ public class Bank extends Account{
             double balance = Double.parseDouble(balanceString);
             newAccount(ssn, accNum, type, balance);
         }
+    }
+
+    public boolean newCustomer(String name, String addr, int zip, String ssn) {
+        if (!ssnNumbers.contains(ssn)) {
+            Customer newCustomer = new Customer(name, addr, zip, ssn);
+            customers.add(newCustomer);
+            names.add(name);
+            addressBook.add(addr);
+            ssnNumbers.add(ssn);
+            numCustomers++;
+            return true;
+        }
+        else return false;
     }
 
     public void bankInfo() {

@@ -8,13 +8,14 @@ public class Transaction extends Account{
     private String time;
 
     public Transaction() {
-        this.accNumber = 0;
-        this.transType = 0;
-        this.amount = 0.0;
-        this.dateTime();
+        accNumber = 0;
+        transType = 0;
+        amount = 0.0;
+        dateTime();
     }
 
     public Transaction(int accNumber, int transType, double amount) {
+        super();
         this.accNumber = accNumber;
         this.transType = transType;
         this.amount = amount;

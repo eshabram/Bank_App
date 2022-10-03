@@ -14,6 +14,7 @@ public class Account extends Customer{
         this.balance = 0.0;
     }
     public Account(String ssn, int accNum, int type, double balance) {
+        super();
         this.accNum = accNum;
         this.type = type;
         this.balance = balance;
