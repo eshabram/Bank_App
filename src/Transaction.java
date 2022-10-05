@@ -1,26 +1,26 @@
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class Transaction extends Account{
-    private int accNumber;
+public class Transaction {
+    private int accNum;
     private double amount;
     private int transType;
     private String time;
 
     public Transaction() {
-        accNumber = 0;
+        accNum = 0;
         transType = 0;
         amount = 0.0;
         dateTime();
     }
 
-    public Transaction(int accNumber, int transType, double amount) {
-        super();
-        this.accNumber = accNumber;
+    public Transaction(int accNum, int transType, double amount) {
+        this.accNum = accNum;
         this.transType = transType;
         this.amount = amount;
         this.time = dateTime();
     }
+    public int getTransAccNum() {return accNum;}
     public int getTransType() {
         return transType;
     }

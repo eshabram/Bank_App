@@ -3,19 +3,27 @@ import java.io.FileNotFoundException;
 import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Scanner;
+/*
+Author: Elliot Shabram
+Date: 10/05/2022
+ */
 
-public class Bank extends Account{
+public class Bank {
     private String name;
     private static double totalBalance = 0;
     private static int numAccounts;
     private static int numCustomers;
 
-    private ArrayList<Account> accounts = new ArrayList<>();
+    // lists for customers
     private ArrayList<Customer> customers = new ArrayList<>();
     private ArrayList<String> names = new ArrayList<>();
-    private ArrayList<Integer> accNums = new ArrayList<>();
     private ArrayList<String> ssnNumbers = new ArrayList<>();
     private ArrayList<String> addressBook = new ArrayList<>();
+
+    // lists for accounts
+    private ArrayList<String> accNames = new ArrayList<>();
+    private ArrayList<Account> accounts = new ArrayList<>();
+    private ArrayList<Integer> accNums = new ArrayList<>();
     private ArrayList<Transaction> transactions = new ArrayList<>();
 
     public Bank() {
@@ -23,54 +31,90 @@ public class Bank extends Account{
     }
 
     public Bank(String name) {
-        super();
         this.name = name;
     }
 
     public boolean newAccount(String ssn, int accNum, int type, double balance) {
+        boolean flag = false;
         if (!accNums.contains(accNum)) {
-            if (ssnNumbers.contains(ssn) && accounts.size() > 1) {
-                if (accounts.get(ssnNumbers.indexOf(ssn)).getType() != type) {
+            if (ssnNumbers.contains(ssn)) {
+                Customer customer = customers.get(ssnNumbers.indexOf(ssn));
+                if (type == 1 && !customer.hasChecking()) {
                     Account temp = new Account(ssn, accNum, type, balance);
                     accounts.add(temp);
-                    accNums.add(temp.getAccNum());
+                    accNums.add(accNum);
+                    accNames.add(customers.get(ssnNumbers.indexOf(ssn)).getName());
+                    totalBalance += balance;
+                    customer.setChecking(true, accNum);
+                    numAccounts++;
+                    flag = true;
+                    System.out.printf("Account creation - Number: %d, Customer: %s%n",
+                            accNum, customers.get(ssnNumbers.indexOf(ssn)).getName());
+                } else if (type == 2 && !customer.hasSavings()) {
+                    Account temp = new Account(ssn, accNum, type, balance);
+                    accounts.add(temp);
+                    accNums.add(accNum);
                     totalBalance += balance;
                     numAccounts++;
-                    return true;
-                } else return false;
-            } else {
-                Account temp = new Account(ssn, accNum, type, balance);
-                accounts.add(temp);
-                accNums.add(temp.getAccNum());
-                totalBalance += balance;
-                numAccounts++;
-                return true;
+                    customer.setSavings(true, accNum);
+                    flag =  true;
+                    System.out.printf("Account creation - Number: %d, Customer: %s%n",
+                            accNum, customers.get(ssnNumbers.indexOf(ssn)).getName());
+                }
+                else  {
+                    System.out.printf("Account creation failed - Customer %s already has two accounts%n",
+                            customers.get(ssnNumbers.indexOf(ssn)).getName());
+                }
             }
-        } else return false;
+        }
+        else {
+            System.out.printf("Account creation failed - Account %d already exists%n", accNum);
+        }
+        return flag;
+    }
+
+    public boolean newCustomer(String name, String addr, int zip, String ssn) {
+        if (!ssnNumbers.contains(ssn)) {
+            Customer newCustomer = new Customer(name, addr, zip, ssn);
+            customers.add(newCustomer);
+            names.add(name);
+            addressBook.add(addr);
+            ssnNumbers.add(ssn);
+            numCustomers++;
+            System.out.printf("%s is added.%n", name);
+            return true;
+        }
+        else {
+            System.out.printf("%s is not added - Existing customer with matching SSN in system.%n", name);
+            return false;
+        }
     }
 
     public boolean closeAccount(int accNum) {
         if (accNums.contains(accNum)) {
             Transaction trans = new Transaction(accNum, 3, 0);
-            accounts.get(accNums.indexOf(accNum)).addTransaction(trans);
+            transactions.add(trans);
             int index = accNums.indexOf(accNum);
             totalBalance -= accounts.get(index).getBalance();
             accounts.remove(index);
             accNums.remove(index);
-            names.remove(index);
-            ssnNumbers.remove(index);
-            addressBook.remove(index);
+            if (customers.get(names.indexOf(accNames.get(index))).hasChecking()) {
+                customers.get(names.indexOf(accNames.get(index))).setChecking(false, 0);
+            }
+            else {
+                customers.get(names.indexOf(accNames.get(index))).setSavings(false, 0);
+            }
+            accNames.remove(index);
             numAccounts--;
             return true;
         } else return false;
     }
 
     public boolean deposit(int accNum, double deposit) {
-        Account temp = new Account();
-        temp = accounts.get(accNums.indexOf(accNum));
+        Account temp = accounts.get(accNums.indexOf(accNum));
         if (accNums.contains(accNum)) {
             Transaction trans = new Transaction(accNum, 1, deposit);
-            temp.addTransaction(trans);
+            transactions.add(trans);
             temp.setBalance(temp.getBalance()+deposit);
             return true;
         } else return false;
@@ -80,7 +124,7 @@ public class Bank extends Account{
         temp = accounts.get(accNums.indexOf(accNum));
         if (accNums.contains(accNum)) {
             Transaction trans = new Transaction(accNum, 2, withdraw);
-            temp.addTransaction(trans);
+            transactions.add(trans);
             temp.setBalance(temp.getBalance()-withdraw);
             return true;
         } else return false;
@@ -89,15 +133,15 @@ public class Bank extends Account{
     public void transaction(int accNum) {
         boolean flag = false;
         for (Transaction transaction : transactions) {
-            if (transaction.getAccNum() == accNum) {
+            if (transaction.getTransAccNum() == accNum) {
                 if (transaction.getTransType() == 1) {
-                    System.out.printf("  - Account Number: %d, Deposit ($%.2f), %s%n", transaction.getAccNum(),
+                    System.out.printf("  - Account Number: %d, Deposit ($%.2f), %s%n", transaction.getTransAccNum(),
                             transaction.getAmount(), transaction.dateTime());
                 } else if (transaction.getTransType() == 2) {
-                    System.out.printf("  - Account Number: %d, Withdraw ($%.2f), %s%n", transaction.getAccNum(),
+                    System.out.printf("  - Account Number: %d, Withdraw ($%.2f), %s%n", transaction.getTransAccNum(),
                             transaction.getAmount(), transaction.dateTime());
                 } else {
-                    System.out.printf("  - Account Number: %d, %s, %s%n", transaction.getAccNum(),
+                    System.out.printf("  - Account Number: %d, %s, %s%n", transaction.getTransAccNum(),
                             transaction.getTransType(), transaction.dateTime());
                 }
                 flag = true;
@@ -117,9 +161,9 @@ public class Bank extends Account{
                 System.out.println("  - Checking");
             } else System.out.println("  - Savings");
             System.out.printf("  - Balance: $%.2f%n", temp.getBalance());
-            System.out.printf("  - Customer: %s%n", names.get(index));
+            System.out.printf("  - Customer: %s%n", accNames.get(index));
         } else {
-            System.out.println("");
+            System.out.printf("Account (%d) does not exist.%n", accNum);
         }
     }
 
@@ -139,7 +183,7 @@ public class Bank extends Account{
         // swallow newline character
         inputStream.nextLine();
 
-        // first customer... (you will most likely want to use a loop here using the number above...)
+
         for (int i = 0; i < numCust; i++) {
             String customer = inputStream.nextLine();
             String[] custSplit = customer.split(",");
@@ -154,8 +198,10 @@ public class Bank extends Account{
 
         // swallow newline character
         inputStream.nextLine();
+
+        // I'm splitting the string up into an array using the "split()" function that I found online. We're both
+        // lucky that I didn't use the "splitTokens()" function.
         for (int i = 0; i < numAccount; i++) {
-            Customer customer;
             String account = inputStream.nextLine();
             String[] accSplit = account.split(",");
             String ssn = accSplit[0];
@@ -167,19 +213,6 @@ public class Bank extends Account{
             double balance = Double.parseDouble(balanceString);
             newAccount(ssn, accNum, type, balance);
         }
-    }
-
-    public boolean newCustomer(String name, String addr, int zip, String ssn) {
-        if (!ssnNumbers.contains(ssn)) {
-            Customer newCustomer = new Customer(name, addr, zip, ssn);
-            customers.add(newCustomer);
-            names.add(name);
-            addressBook.add(addr);
-            ssnNumbers.add(ssn);
-            numCustomers++;
-            return true;
-        }
-        else return false;
     }
 
     public void bankInfo() {
@@ -195,4 +228,73 @@ public class Bank extends Account{
         System.out.printf("%nTotal Balance: $%.2f%n", totalBalance);
     }
 
+    public void customerInfoWithSSN(int ssn) {
+        String temp = String.valueOf(ssn);
+        int count = 0;
+        for (Customer customer : customers) {
+            if (customer.getSsn().substring(7, 11).equals(temp)) {
+                System.out.printf("Name: %s%n", customer.getName());
+                System.out.printf("%s, %d%n", customer.getAddress(), customer.getZip());
+                System.out.printf("SSN: %s%n", customer.getSsn());
+                if (customer.hasChecking()) {
+                    int tempNum = customer.getCheckingNum();
+                    System.out.printf("Checking (%d), $%.2f%n", tempNum, accounts.get(accNums.indexOf(tempNum)).getBalance());
+                }
+                if (customer.hasSavings()) {
+                    int tempNum = customer.getSavingsNum();
+                    System.out.printf("Savings (%d), $%.2f%n", tempNum, accounts.get(accNums.indexOf(tempNum)).getBalance());
+                }
+                if (!customer.hasChecking() && !customer.hasSavings()){
+                    System.out.println("No accounts");
+                }
+            }
+            else {
+                count++;
+            }
+        }
+        if (count == customers.size()) {
+            System.out.printf("No customer with %d%n", ssn);
+        }
+    }
+
+    public boolean removeCustomer(String ssn) {
+        if (ssnNumbers.contains(ssn)) {
+            int index = ssnNumbers.indexOf(ssn);
+            Customer customer = customers.get(index);
+            if (customer.hasChecking()) {
+                int check = customer.getCheckingNum();
+                int accIndex = accNums.indexOf(check);
+                System.out.printf("Account closed = Number: %d $%.2f%n",
+                        accNums.get(accIndex), accounts.get(accIndex).getBalance());
+                totalBalance -= accounts.get(accIndex).getBalance();
+                accNums.remove(accIndex);
+                accNames.remove(accIndex);
+                accounts.remove(accIndex);
+                numAccounts--;
+            }
+            if (customer.hasSavings()) {
+                int save = customer.getSavingsNum();
+                int accIndex = accNums.indexOf(save);
+                System.out.printf("Account closed = Number: %d $%.2f%n",
+                        accNums.get(accIndex), accounts.get(accIndex).getBalance());
+                totalBalance -= accounts.get(accIndex).getBalance();
+                accNums.remove(accIndex);
+                accNames.remove(accIndex);
+                accounts.remove(accIndex);
+                numAccounts--;
+            }
+            System.out.printf("Customer removed - SSN: ***-**-%s. Customer: %s%n",
+                    ssnNumbers.get(index).substring(7, 11), names.get(index));
+            customers.remove(index);
+            ssnNumbers.remove(index);
+            names.remove(index);
+            addressBook.remove(index);
+            numCustomers--;
+            return true;
+        }
+        else  {
+            System.out.printf("Customer remove failed. SSN does not exist.%n");
+            return false;
+        }
+    }
 }
