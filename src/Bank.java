@@ -54,6 +54,7 @@ public class Bank {
                     Account temp = new Account(ssn, accNum, type, balance);
                     accounts.add(temp);
                     accNums.add(accNum);
+                    accNames.add(customers.get(ssnNumbers.indexOf(ssn)).getName());
                     totalBalance += balance;
                     numAccounts++;
                     customer.setSavings(true, accNum);
@@ -65,6 +66,9 @@ public class Bank {
                     System.out.printf("Account creation failed - Customer %s already has two accounts%n",
                             customers.get(ssnNumbers.indexOf(ssn)).getName());
                 }
+            }
+            else {
+                System.out.printf("Account creation failed - No customer with SSN: %s%n", ssn);
             }
         }
         else {
@@ -141,8 +145,7 @@ public class Bank {
                     System.out.printf("  - Account Number: %d, Withdraw ($%.2f), %s%n", transaction.getTransAccNum(),
                             transaction.getAmount(), transaction.dateTime());
                 } else {
-                    System.out.printf("  - Account Number: %d, %s, %s%n", transaction.getTransAccNum(),
-                            transaction.getTransType(), transaction.dateTime());
+                    System.out.printf("  - Account Number: %d, Account closed, %s%n", transaction.getTransAccNum(), transaction.dateTime());
                 }
                 flag = true;
             }
@@ -183,7 +186,8 @@ public class Bank {
         // swallow newline character
         inputStream.nextLine();
 
-
+        // I'm splitting the string up into an array using the "split()" function that I found online. We're both
+        // lucky that I didn't use the "splitTokens()" function.
         for (int i = 0; i < numCust; i++) {
             String customer = inputStream.nextLine();
             String[] custSplit = customer.split(",");
@@ -192,15 +196,21 @@ public class Bank {
             String zipString = custSplit[2];
             int zip = Integer.parseInt(zipString);
             String ssn = custSplit[3];
-            newCustomer(name, addr, zip, ssn);
+            if (!ssnNumbers.contains(ssn)) {
+                Customer newCustomer = new Customer(name, addr, zip, ssn);
+                customers.add(newCustomer);
+                names.add(name);
+                addressBook.add(addr);
+                ssnNumbers.add(ssn);
+                numCustomers++;
+            }
         }
         int numAccount = inputStream.nextInt();
 
         // swallow newline character
         inputStream.nextLine();
 
-        // I'm splitting the string up into an array using the "split()" function that I found online. We're both
-        // lucky that I didn't use the "splitTokens()" function.
+        // again with the "split()" function.
         for (int i = 0; i < numAccount; i++) {
             String account = inputStream.nextLine();
             String[] accSplit = account.split(",");
@@ -211,10 +221,32 @@ public class Bank {
             int type = Integer.parseInt(typeString);
             String balanceString = accSplit[3];
             double balance = Double.parseDouble(balanceString);
-            newAccount(ssn, accNum, type, balance);
+            if (!accNums.contains(accNum)) {
+                if (ssnNumbers.contains(ssn)) {
+                    Customer customer = customers.get(ssnNumbers.indexOf(ssn));
+                    if (type == 1 && !customer.hasChecking()) {
+                        Account temp = new Account(ssn, accNum, type, balance);
+                        accounts.add(temp);
+                        accNums.add(accNum);
+                        accNames.add(customers.get(ssnNumbers.indexOf(ssn)).getName());
+                        totalBalance += balance;
+                        customer.setChecking(true, accNum);
+                        numAccounts++;
+                    } else if (type == 2 && !customer.hasSavings()) {
+                        Account temp = new Account(ssn, accNum, type, balance);
+                        accounts.add(temp);
+                        accNums.add(accNum);
+                        accNames.add(customers.get(ssnNumbers.indexOf(ssn)).getName());
+                        totalBalance += balance;
+                        numAccounts++;
+                        customer.setSavings(true, accNum);
+                    }
+                }
+            }
         }
     }
 
+    //I'm liking these for each loops now that I have gotten the hang of them
     public void bankInfo() {
         System.out.printf("Bank name: %s%n", name);
         System.out.printf("Number of Customers: %d%n", numCustomers);
@@ -244,7 +276,7 @@ public class Bank {
                     int tempNum = customer.getSavingsNum();
                     System.out.printf("Savings (%d), $%.2f%n", tempNum, accounts.get(accNums.indexOf(tempNum)).getBalance());
                 }
-                if (!customer.hasChecking() && !customer.hasSavings()){
+                if (!customer.hasChecking() && !customer.hasSavings()){ // if if if I know, but what else could be done?
                     System.out.println("No accounts");
                 }
             }
@@ -256,7 +288,7 @@ public class Bank {
             System.out.printf("No customer with %d%n", ssn);
         }
     }
-
+    // my code may appear larger than others because I made lists that I thought I might need later.
     public boolean removeCustomer(String ssn) {
         if (ssnNumbers.contains(ssn)) {
             int index = ssnNumbers.indexOf(ssn);
@@ -264,6 +296,8 @@ public class Bank {
             if (customer.hasChecking()) {
                 int check = customer.getCheckingNum();
                 int accIndex = accNums.indexOf(check);
+                Transaction trans = new Transaction(accNums.get(accIndex), 3, 0.0);
+                transactions.add(trans);
                 System.out.printf("Account closed = Number: %d $%.2f%n",
                         accNums.get(accIndex), accounts.get(accIndex).getBalance());
                 totalBalance -= accounts.get(accIndex).getBalance();
@@ -275,6 +309,8 @@ public class Bank {
             if (customer.hasSavings()) {
                 int save = customer.getSavingsNum();
                 int accIndex = accNums.indexOf(save);
+                Transaction trans = new Transaction(accNums.get(accIndex), 3, 0.0);
+                transactions.add(trans);
                 System.out.printf("Account closed = Number: %d $%.2f%n",
                         accNums.get(accIndex), accounts.get(accIndex).getBalance());
                 totalBalance -= accounts.get(accIndex).getBalance();
